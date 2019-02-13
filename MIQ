@@ -1,5 +1,31 @@
 VXVM
 ******
+>> Veritas Naming Scheme
+  1. Operating system-based naming scheme
+  2. Enclosure based naming scheme.
+  
+  bash-3.00# vxddladm get namingscheme
+  NAMING_SCHEME   PERSISTENCE   LOWERCASE       USE_AVID
+  ======================================================
+  Enclosure Based      Yes        Yes            Yes
+  bash-3.00#
+  
+>> To change the Operating system based naming scheme
+   bash-3.00# vxddladm set namingscheme=osn
+   bash-3.00# vxdisk list
+   DEVICE    TYPE     DISK    GROUP      STATUS
+   c1t0d0s2 auto:ZFS   -       -       ZFS
+   c1t3d0   auto:none  -       -       online invalid
+   c1t4d0   auto:ZFS   -       -       ZFS
+   c1t5d0   auto:none  -       -       online invalid
+   
+>> You can match the OS native names(i.e format) with VXVM enclose based names using the below command
+   bash-3.00# vxdisk -e list
+   DEVICE  TYPE   DISK   GROUP STATUS  OS_NATIVE_NAME ATTR
+   disk_0  auto:none    -   -  online invalid  c1t3d0     -
+   disk_1  auto:none    -   -  online invalid  c1t5d0     -
+   disk_2  auto:ZFS     -   -  ZFS     c1t4d0     -
+   disk_3  auto:ZFS     -   -  ZFS     c1t0d0s2   -
 
  >> Creating the new disk group
     #vxdg init UXDG UXDISK1=disk_0 UXDISK2=disk_1
@@ -7,6 +33,15 @@ VXVM
     DEVICE     TYPE             DISK     GROUP   STATUS
     disk_0     auto:cdsdisk    UXDISK1   UXDG    online
     disk_1     auto:cdsdisk    UXDISK2   UXDG    online
+    
+ >> After scanning the disk in OS,Scan the disks in veritas level by using the below command.
+    bash-3.00# vxdisk scandisks
+    
+ >> Bringing the disk in  to veritas control
+    bash-3.00# /etc/vx/bin/vxdisksetup -i disk_0
+    
+ >> If you want to setup the disk in specific format,you can use the below syntax.
+    #vxdisksetup -i disk_XX format=cds or simple or sliced
     
  >> Addition of disk
     #vxdg -g UXDG adddisk UXDISK3=disk_4
@@ -102,3 +137,31 @@ VXVM
     
  >> To confirm that disk group is ok:   
     #vxprint -g UXDG
+    
+ >> Creating new volume
+    Syntax:
+    #vxassist -g diskgroup make vol_name size layout=format disk-name
+    
+    > Concatenation volume
+      # vxassist -g UXDG make uxoravol1 50M
+    > If you want to make the volume using the specific disk
+      bash-3.00# vxassist -g UXDG make uxoravol1 50M UXDISK1
+    > use mkfs to create vxfs filesystem
+      # mkfs -F vxfs /dev/vx/rdsk/UXDG/uxoravol1
+    > create a new mountpoint and mount
+      mount -F vxfs /dev/vx/dsk/UXDG/uxoravol1 /uxoravol1
+      
+  >> Striped volume
+     #vxassist -g UXDG make urstripe 100M UXDISK1 UXDISK2 UXDISK3 layout=stripe  stripeunit=32k
+     
+  >> Mirror volume
+     # vxassist -g UXDG make uxvol2 50M layout=mirror
+     
+     volume with two plex – one way mirror
+     volume with three plex – two way mirror.
+     
+  >> Mirrored-stripe or RAID-0+1(stripping + mirroring)
+     # vxassist -g UXDG make msvol 50M layout=mirror-stripe
+     
+  >> Striped-mirror or RAID- 1+0 (mirroring +stripping)- Layered volume
+     # vxassist -g UXDG make smvol 50M layout=stripe-mirror
