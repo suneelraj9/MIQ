@@ -1,0 +1,104 @@
+VXVM
+******
+
+ >> Creating the new disk group
+    #vxdg init UXDG UXDISK1=disk_0 UXDISK2=disk_1
+    #vxdisk list
+    DEVICE     TYPE             DISK     GROUP   STATUS
+    disk_0     auto:cdsdisk    UXDISK1   UXDG    online
+    disk_1     auto:cdsdisk    UXDISK2   UXDG    online
+    
+ >> Addition of disk
+    #vxdg -g UXDG adddisk UXDISK3=disk_4
+ 
+ >> Removing the disk
+    #vxdg -g UXDG rmdisk UXDISK3
+ 
+ >> Maximum size of volume
+    #vxassist -g UXDG maxsize
+    Maximum volume size: 284672 (139Mb)
+    
+    #vxassist -g UXDG maxsize layout=mirror
+    Maximum volume size: 10240 (60Mb)
+    
+    #vxassist -g UXDG maxsize layout=stripe
+    Maximum volume size: 284672 (139Mb)
+    
+ >> Deporting diskgroup
+    #vxdg list
+    NAME      STATE        ID
+    UXDG      enabled,cds       1364022395.37.sfos
+    
+    #vxdg deport UXDG
+    By default vxdisk output will not show the deported diskgroup tag
+    
+    #vxdisk list
+    DEVICE    TYPE           DISK  GROUP  STATUS
+    disk_0    auto:cdsdisk    -     -     online
+    disk_1    auto:cdsdisk    -     -     online
+    disk_2    auto:ZFS        -     -     ZFS
+    disk_3    auto:ZFS        -     -     ZFS
+    disk_4    auto:cdsdisk    -     -     online
+    disk_5    auto:cdsdisk    -     -     online
+    disk_6    auto:cdsdisk    -     -     online
+    
+  >> To find the deported diskgroup disks
+    #vxdisk -o alldgs list
+    DEVICE    TYPE           DISK   GROUP  STATUS
+    disk_0    auto:cdsdisk    -     (UXDG) online
+    disk_1    auto:cdsdisk    -     (UXDG) online
+    
+  >> Importing the deported diskgroup
+    #vxdg import UXDG
+    #vxdg list
+    NAME     STATE   ID
+    UXDG     enabled,cds  1364022395.37.sfos
+   
+   Sometimes you may need to use -C flag to import the cluster diskgroup to clear the VCS lock.
+
+   # vxdg -C import DG_NAME
+   
+ >> Re-Naming the Diskgroup
+    #vxdg deport UXDG
+    #vxdg -n NEWDG import UXDG
+    
+ >> Diskgroup configuration backup/restore:
+    # ls -lrt /etc/vx/cbr/bk
+    total 6
+    drwxr-xr-x  14 root  root 18 Mar 27 19:18 UXDG.1364022395.37.sfos
+    drwxr-xr-x   2 root  root  6 Mar 27 21:21 UXDG.1364398489.45.sfos
+    
+ >> To take current configuration backup
+    # /etc/vx/bin/vxconfigbackup
+    
+ >> To take the current configuration to specific location
+     # /etc/vx/bin/vxconfigbackup -l /var/tmp
+    Start backing up diskgroup UXDG to /var/tmp/UXDG.1364398489.45.sfos.......
+    VxVM  NOTICE V-5-2-3100 Backup complete for diskgroup: UXDG
+    # ls -lrt /var/tmp/UXDG.1364398489.45.sfos
+    total 48473 
+    -rw-r--r-- 1 root root Mar28 17:38 1364398489.45.sfos.diskinfo
+    -rw-r--r-- 1 root root Mar28 17:38 1364398489.45.sfos.cfgrec
+    -rw-r--r-- 1 root root Mar28 17:39 1364398489.45.sfos.binconfig
+    -rw-r--r-- 1 root root Mar28 17:39 1364398489.45.sfos.dginfo
+    
+ >> Display the configuration file in readable format
+    #cd /etc/vx/cbr/bk/UXDG.1364474089.57.sfos
+    # cat 1364474089.57.sfos.cfgrec |vxprint -D - -htr
+    Disk group: UXDG
+    dg UXDG  default      default  25000    1364474089.57.sfos
+    dm UXDISK1      disk_0       auto     65536    143056   -
+    dm UXDISK2      disk_1       auto     65536    143056   -
+    
+ >> To restore the diskgroup configuration
+    To pre-commit the changes run the following  
+    #/etc/vx/bin/vxconfigrestore -p UXDG
+
+    To commit the changes after the precommit 
+    #/etc/vx/bin/vxconfigrestore -c UXDG
+
+    To abort the pre-commit: 
+    #/etc/vx/bin/vxconfigrestore -d UXDG
+    
+ >> To confirm that disk group is ok:   
+    #vxprint -g UXDG
