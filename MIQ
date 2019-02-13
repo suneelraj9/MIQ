@@ -165,3 +165,111 @@ VXVM
      
   >> Striped-mirror or RAID- 1+0 (mirroring +stripping)- Layered volume
      # vxassist -g UXDG make smvol 50M layout=stripe-mirror
+     
+ *************************************************************
+                  VCS-Veritas Cluster
+ *************************************************************
+ 
+ VCS
+ ****
+   > Failover – Service group runs on one system at a time.
+   > Parallel – Service group runs on multiple systems simultaneously
+   > Hybrid – SG behaves as Failover within the local cluster and Parallel for the remote cluster.
+   
+   > VCS main configuration file located -> /etc/VRTSvcs/conf/config/main.cf
+   
+   > set VCS configuration file (main.cf) ro/rw
+     # haconf -dump -makero 
+     # haconf -makerw   
+     
+   > VCS engine log file located -> /var/VRTSvcs/log/engine_A.log.
+     #hamsg engine_A
+     
+   > check the status of the entire cluster
+    #hastatus -sum
+    
+   > verify the syntax of the main.cf 
+     # hacf -verify /etc/VRTSvcs/conf/config
+     
+ Different resource types
+ *************************
+     1. Persistent : VCS can only monitor these resources but can not offline or online them.
+     2. On-Off : VCS can start and stop On-Off resource type. Most resources fall in this category.
+     3. On-Only : VCS starts On-Only resources but does not stop them.Example:NFS
+     
+ steps involved in Offline VCS configuration
+ ********************************************
+    # haconf -dump -makero
+    # hastop -all
+    # cp -p /etc/VRTSvcs/conf/config/main.cf /etc/VRTSvcs/conf/config/main.cf_17march
+    # vi /etc/VRTSvcs/conf/config/main.cf
+    # hacf -verify /etc/VRTSvcs/conf/config/
+    # hastart
+    
+ GAB, LLT and HAD 
+ *****************
+   Basic building blocks of vcs functionality.
+   LLT (low latency transport protocol) – LLT transmits the heartbeats over the interconnects.
+   GAB (Group membership services and atomic broadcast) - overall cluster membership information by tracking the heartbeats sent over LLT interconnects
+   HAD (High Availability daemon) – the main VCS engine which manages the agents and service group. It is in turn monitored by a daemon named hashadow
+   
+ > Check the status of various GAB ports on the cluster nodes
+   # gabconfig -a
+   
+ > maximum number of LLT links (including high and low priority) can a cluster have ?
+   A cluster can have a maximum of 8 LLT links including high and low priority LLT links.
+   
+ > Check the detailed status of LLT links ?
+   # lltstat -nvv
+   
+ > various LLT configuration files and their function
+   LLT uses /etc/llttab to set the configuration of the LLT interconnects.
+   
+   # cat /etc/llttab
+    set-node node01
+    set-cluster 02
+    link nxge1 /dev/nxge1 - ether - -
+    link nxge2 /dev/nxge2 - ether - -
+    link-lowpri /dev/nxge0 – ether - -
+    
+    Another configuration file used by LLT is – /etc/llthosts
+    
+    LLT has an another optional configuration file : /etc/VRTSvcs/conf/sysname. It contains short names for VCS to refer
+    
+  > various GAB configuration files and their function 
+    file /etc/gabtab contains the command to start the GAB.
+    
+  > commands to start and stop GAB are 
+    # gabconfig -c        (start GAB)
+    # gabconfig -U        (stop GAB)
+    
+  > commands to stop and start LLT are 
+    # lltconfig -c       -> start LLT
+    # lltconfig -U       -> stop LLT (GAB needs to stopped first)
+    
+  > why manual GAB seeding is required ?
+    The GAB configuration file /etc/gabtab defines the minimum number of nodes that must be communicating for the cluster to start. 
+    This is called as GAB seeding.
+    In case we don’t have sufficient number of nodes to start VCS [ may be due to a maintenance activity ], 
+    but have to do it anyways, then we have do what is called as manual seeding by firing below command on each of the nodes.
+    
+    # gabconfig -c -x
+    
+  > various ways to stop HAD or VCS cluster
+    # hastop -local
+    # hastop -local -evacuate
+    # hastop -local -force
+    # hastop -all -force
+    # hastop -all
+    
+  > list the resource dependencies 
+    # hares -dep
+    
+  > Enable/disable a resource 
+    # hares -modify [resource_name] Enabled 1      (To enable a resource)
+    # hares -modify [resource_name] Enabled 0        (To disable a resource)
+    
+  > List all the parameters of a resource 
+    # hares -display [resource]
+ 
+    
