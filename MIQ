@@ -275,4 +275,63 @@ VXVM
   > add a service group(a general method)
     To add a service group named SG with 2 nodes (node01 and node02)
     
+    haconf –makerw
+    haconf –makerw
+    hagrp –add SG
+    hagrp –modify SG SystemList node01 0 node02 1
+    hagrp –modify SG AutoStartList node02
+    haconf –dump -makero
     
+  > check the configuration of a service group 
+    # hagrp -display SG
+    
+  > bring service group online/offline
+    # hagrp -online [service-group] -sys [node]      (Online the SG on a particular node)
+    # hagrp -offline [service-group] -sys [node]        (Offline the SG on particular node)
+    
+    The -any option when used instead of the node name, brings the SG online/offline based on SG’s failover policy. 
+    
+    # hagrp -online [service-group] -any
+    # hagrp -offline [service-group] -any
+    
+  > The command to switch the service group to target node :
+    # hagrp -switch [service-group] -to [target-node]
+    
+  > freeze/unfreeze a service group and what happens when you do so
+    When you freeze a service group, VCS continues to monitor the service group, but does not allow it or the resources under it to 
+    be taken offline or brought online. 
+    Failover is also disable even when a resource faults. When you unfreeze the SG, it start behaving in the normal way
+    
+   > To freeze/unfreeze a Service Group temporarily
+      # hagrp -freeze [service-group]
+      # hagrp -unfreeze [service-group]
+      
+   > To freeze/unfreeze a Service Group persistently (across reboots) :
+      # hagrp -freeze -persistent[service-group]
+      # hagrp -unfreeze [service-group] -persistent
+    
+   > How to clear resource faults ?
+     For persistent resources :
+     Do not do anything and wait for the next OfflineMonitorInterval (default – 300 seconds) for the resource to become online.
+     
+     For non-persistent resources 
+     Clear the fault and probe the resource on node01
+     # hares -clear [resource_name] -sys node01
+      # hares -probe [resource_name] -sys node01
+      
+   > clear resources with ADMIN_WAIT state
+     If the ManageFaults attribute of a service group is set to NONE, VCS does not take any automatic action when it detects 
+     a resource fault. VCS places the resource into the ADMIN_WAIT state and waits for administrative intervention. 
+     
+     To clear the resource in ADMIN_WAIT state without faulting service group
+     #hares -probe [resource] -sys node01
+     
+     To clear the resource in ADMIN_WAIT state by changing the status to OFFLINE|FAULTED 
+     # hagrp -clearadminwait -fault [SG] -sys node01
+     
+   > flush a service group and when its required 
+     Flushing of a service group is required when, agents for the resources in the service group seems suspended waiting for 
+     resources to be taken online/offline. 
+     Flushing a service group clears any internal wait states and stops VCS from attempting to bring resources online.
+     
+     # hagrp -flush [SG] -sys node01
