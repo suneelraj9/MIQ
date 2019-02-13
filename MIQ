@@ -272,4 +272,7 @@ VXVM
   > List all the parameters of a resource 
     # hares -display [resource]
  
+  > add a service group(a general method)
+    To add a service group named SG with 2 nodes (node01 and node02)
+    
     
