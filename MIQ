@@ -1,3 +1,164 @@
+SVM
+****
+
+	> Boot from mirror
+	  ok devalias
+	  sds-mirror               /pci@1f,4000/scsi@3/disk@1,0
+	  sds-root                 /pci@1f,4000/scsi@3/disk@0,0
+	  net                      /pci@1f,4000/network@1,1
+	  disk                     /pci@1f,4000/scsi@3/disk@0,0
+	  cdrom                    /pci@1f,4000/scsi@3/disk@6,0:f
+	  
+	ok boot sds-mirror
+	
+	# metadb -i
+	# metadb -d c0t0d0s5 c0t0d0s6
+	# metadb -i
+	
+	# reboot -- sds-mirror
+	
+	Replace failed disk and restore redundancy
+	********************************************
+	
+    prtvtoc /dev/rdsk/c0t1d0s2 | fmthard -s - /dev/rdsk/c0t0d0s2
+    installboot /usr/platform/sun4u/lib/fs/ufs/bootblk /dev/rdsk/c0t0d0s0
+    metadb -f -a /dev/dsk/c0t0d0s5
+    metadb -f -a /dev/dsk/c0t0d0s6
+
+    metareplace -e d0 c0t0d0s0
+	
+	Solaris SVM: Recovery procedures when BOTH sides of the mirror indicate a"Last Erred" state
+	*********************************************************************************************
+	> EXAMPLE 1 – metastat of a simple mirrored metadevice:
+	  Note in this example, both submirrors are in a “Last Errd” state making normal recovery procedures impossible.
+	  
+    Determine which submirrors *if any* are valid. The goal is to locate 1 good submirror from each metadevice. 
+	Once the good submirror has been located, recreate the mirror using the good submirror. 
+	Attach the remaining submirror and mount the mirror to its original mount point.
+
+    Below is an example of the procedure used to recover metadevice d6  (the procedure is identical for metadevice d14)	  
+	
+      # umount /dev/md/dsk/d6 (main mirror) 
+      # metaclear -f d6 
+      # fsck /dev/md/rdsk/d41 (sub mirror)
+      # fsck /dev/md/rdsk/d42 (sub mirror)
+      # mount /dev/md/dsk/d41 /
+   	** verify data at this point ** If it not recovered from will need to mount d42 and verify the data
+	
+	If data is determined to be valid, recreate the mirror metadevice using this submirror
+
+    	# umount /dev/md/rdsk/d41 
+      # metainit d6 -m d41
+
+	attach second submirror and mount metadevice
+
+      # metattach d6 d42 
+      # mount /dev/md/dsk/d6 /
+	
+	> SVM error messages
+	*********************
+	    https://docs.oracle.com/cd/E19455-01/806-3204/6jccb3gak/index.html
+	
+	> Find booth device
+	********************
+    root@ivmprod /$ prtconf -pv |grep -i bootpath
+          bootpath:  '/pci@1c,600000/scsi@2/disk@0,0:a'
+    root@ivmprod /$ 
+	> Collect disk controller information: 
+	*************************************
+      root@ivmprod /$ cfgadm -al
+      Ap_Id                     Type         Receptacle   Occupant     Condition
+      c1                        scsi-bus     connected    configured   unknown
+      c1::dsk/c1t0d0            disk         connected    configured   unknown
+	
+	> Check metadevice status: 
+    **************************
+      root@ivmprod /$ metastat -t |grep Maintenance
+        c1t0d0s0    0  No     Maintenance             Mon Jun 23 20:08:18 2014
+        c1t0d0s1    0  No     Maintenance             Wed Jun 25 11:00:10 2014
+      root@ivmprod /$
+	
+	> Check metadb status: 
+	**********************
+    root@ivmprod /$ metadb -i
+	
+	> Collect metadevice information and make sure which are the metadevice we have to detach from mirroring:
+	
+      root@ivmprod /$ metastat -p
+	
+	> Detach failed disk from mirror / SVM: 
+	
+      root@ivmprod /$ metadetach d10 d11
+	
+	> Above we got error so doing forcefully: 
+	
+      root@ivmprod /$ metadetach -f d10 d11
+      d10: submirror d11 is detached
+      root@ivmprod /$
+	
+	> Check the status of detached disks: 
+	
+      root@ivmprod /$ metastat -p
+	
+	> Delete faulted metadb/replica devices: 
+	
+      root@ivmprod /$ metadb -d /dev/dsk/c1t0d0s7
+      root@ivmprod /$ metadb -i
+	
+	> Clear detached metadevices and check the status: 
+	
+      root@ivmprod /$ metaclear d11 d21 d31
+
+      root@ivmprod /$ metastat -p
+	
+	> Unconfigure faulty disk from OS : 
+	
+	root@ivmprod /$ cfgadm -c unconfigure c1::dsk/c1t0d0
+	
+    Now the time to inform our DC engineer to pull out the faulty disk and insert new disk. 
+    Get confirmation from DC engineer before configure new disk in to OS level. 
+    Also we can see the console logs to confirm whether the disk has been replaced successfully or not.
+    Below is the console logs for my case: 
+	
+	> Configure newly added disk from OS:
+	
+    root@ivmprod /$ cfgadm -c configure c1::dsk/c1t0d0
+    root@ivmprod /$ cfgadm -al
+	
+	> Copy VTOC from secondary disk to primary disk which we replaced: 
+	
+    prtvtoc /dev/rdsk/c1t1d0s2 |fmthard -s- /dev/rdsk/c1t0d0s2
+	
+	> Create metadb with three replica on slice 7(s7) to new disk: 
+	
+    root@ivmprod /$ metadb -afc 3 /dev/rdsk/c1t0d0s7
+    root@ivmprod /$ metadb -i
+	
+	> Create medadevice using metainit command: 
+	
+    root@ivmprod /$ metainit d11 1 1 c1t0d0s0
+    d11: Concat/Stripe is setup
+    root@ivmprod /$ metainit d21 1 1 c1t0d0s1
+    d21: Concat/Stripe is setup
+    root@ivmprod /$ metainit d31 1 1 c1t0d0s6
+    d31: Concat/Stripe is setup
+    root@ivmprod /$
+	
+	> Attach newly created metadevice to main metadevice: 
+	
+    root@ivmprod /$ metattach d10 d11
+    d10: submirror d11 is attached
+    root@ivmprod /$ metattach d20 d21
+    d20: submirror d21 is attached
+    root@ivmprod /$ metattach d30 d31
+    d30: submirror d31 is attached
+    root@ivmprod /$
+	
+	> Check the syncing status: 
+	
+    root@ivmprod /$ metastat |grep %
+
+
 VXVM
 ******
 >> Veritas Naming Scheme
