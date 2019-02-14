@@ -166,6 +166,52 @@ VXVM
   >> Striped-mirror or RAID- 1+0 (mirroring +stripping)- Layered volume
      # vxassist -g UXDG make smvol 50M layout=stripe-mirror
      
+  >> RAID-5 (striping with parity)
+     # vxassist -g UXDG make smvol 50M layout=raid5
+     
+  >> Removing volume
+     # Un-mount the volume
+     # vxassist -g UXDG remove volume smvol
+     
+  >> Volume resize
+     > Determining how much space we can increase the volume
+       # vxassist -g UXDG maxsize layout=mirror
+       Maximum volume size: 71680(35Mb)
+     > Resize the volume & filesystem
+       # /etc/vx/bin/vxresize -g UXDG  smvol +10M
+       Decreasing the volume and filesystem using vxresize
+       # /etc/vx/bin/vxresize -g UXDG  smvol -10M
+       
+   >> Volume online relayout
+      > Converting a concatenation volume to mirror volume
+        Adding the mirror
+        # vxassist -g UXDG mirror uxoravol1 &
+        We can use & or -b option in vxassist to move the task in background
+        
+      > We can see active mirror tasks using below commands
+        # vxtask list
+        # vxtask monitor
+       
+      > Converting concatenate volume to concat-mirror
+        # vxassist -g UXDG mirror concatv1
+        # vxassist -g UXDG convert concatv1 layout=concat-mirror
+        
+      > Converting concatenate volume to mirror-stripe
+        #vxassist -g UXDG relayout concatv1 layout=mirror-stripe
+        # vxassist -g UXDG convert concatv1 layout=mirror-stripe
+        
+      > Converting concatenate volume to raid5
+        # vxassist -g UXDG relayout concatv1 layout=raid5
+        
+      > Converting concatenate volume to stripe
+        #vxassist -g UXDG relayout concatv1 layout=stripe
+        
+      > Converting concatenate volume to stripe-mirror
+        # vxassist -g UXDG relayout concatv1 layout=stripe-mirror
+        
+      > To monitor the relayout status
+        # vxrelayout status volume
+     
  *************************************************************
                   VCS-Veritas Cluster
  *************************************************************
