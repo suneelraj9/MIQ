@@ -211,6 +211,89 @@ VXVM
         
       > To monitor the relayout status
         # vxrelayout status volume
+        
+  >> VXDMP(Dynamic Multi Pathing)
+  
+     > easiest way to check whether DMP is enabled or not
+        # vxdisk path
+     > Another way is to check multipathing at a single disk
+        # vxdisk list c2t0d0s2
+        
+     > List all the DMP nodes under all enclosures
+        # vxdmpadm list dmpnode all
+        
+     > Alternatively we can also use the below command to check the multipathing
+       # vxdmpadm getsubpaths dmpnodename=devicename
+       
+     > To find what are Disk are using controller c1
+        bash-3.00# vxdmpadm getsubpaths ctlr=c1
+        NAME STATE[A] PATH-TYPE[M] DMPNODENAME ENCLR-TYPE ENCLR-NAMEATTRS
+        ======================================================
+        c1t3d0 ENABLED(A)    -      disk_0     Disk     disk           -
+        c1t5d0 ENABLED(A)    -      disk_1     Disk     disk           -
+        c1t4d0 ENABLED(A)    -      disk_2     Disk     disk           -
+     
+  
+     > To list the controllers
+       # vxdmpadm listctlr all
+        CTLR-NAME       ENCLR-TYPE      STATE      ENCLR-NAME
+        =====================================================
+        c2              EMC             ENABLED      emc0
+        c4              EMC             ENABLED      emc0
+        c0              Disk            ENABLED      disk
+        c1              Disk            ENABLED      disk
+      
+     > To list the enclosures
+       # vxdmpadm listenclosure all
+        ENCLR_NAME ENCLR_TYPE  ENCLR_SNO  STATUS ARRAY_TYPE LUN_COUNT
+        ==============================================================
+        emc0         EMC     000292704216 CONNECTED    A/A    331
+        disk         Disk    DISKS        CONNECTED    Disk   4
+        
+     > To list all the DMP nodes under a specific enclosure 
+       # vxdmpadm getdmpnode enclosure=enc0
+
+        NAME     STATE   ENCLR-TYPE PATHS ENBL DSBL ENCLR-NAME
+        =========================================================
+        c2t1d0s2 ENABLED T300        2     2    0     enc0
+        c2t1d1s2 ENABLED T300        2     2    0     enc0
+        c2t1d2s2 ENABLED T300        2     2    0     enc0
+        c2t1d3s2 ENABLED T300        2     2    0     enc0
+        
+      > To get information about a particula DMP node 
+        # vxdmpadm getdmpnode nodename=c0t5006016041E03B33d0s2
+
+        NAME              STATE    ENCLR-TYPE PATHS ENBL DSBL  ENCLR-NAME
+        ====================================================================
+        emc_clariion0_16 ENABLED EMC_CLARiiON  6     6    0    emc_clariion0
+        
+      > To disable controller
+        # vxdmpadm disable ctlr=c2
+        
+      > To enable controller
+        # vxdmpadm enable ctlr=c2
+        
+      > To start gathering the statistics
+        # vxdmpadm iostat start
+        
+      > To see the statistics
+        # vxdmpadm iostat show all
+        
+      > Display I/O statistics on specific pathname, DMP nodename and enclosure name
+        # vxdmpadm iostat show pathname=c3t115d0s2
+        # vxdmpadm iostat show dmpnodename=c0t0d0s2
+        # vxdmpadm iostat show enclosure=Disk
+        
+      > reset the statistics to being the monitoring
+        vxdmpadm iostat reset
+        
+        
+      > To stop DMP
+        # vxdmpadm stop restore
+        
+      > To start DMP,
+        # vxdmpadm start restore
+        
      
  *************************************************************
                   VCS-Veritas Cluster
