@@ -14,6 +14,39 @@
 SVM
 ****
 
+  Replace failed root disk under Solaris Volume Manager (SVM)
+  ***********************************************************
+  
+    1. Detach the sub-mirrors d11 and d1
+       # metadetach d10 d11
+       # metadetach d0 d1
+       
+    2. Next is to remove any metadb on the failed disk. Check for the metadbs configured in the system
+       #metadb
+       # metadb -d c1t0d0s7
+       
+    3. Remove the disk from the OS before physically removing it from the server.
+       #luxadm remove_device <device name>
+       if not worked
+       #luxadm -e offline <device name>
+       or
+       cfgadm -c unconfigure <apid>
+    
+    4. Now add the new disk and run devfsadm to scan for the newly added disk.
+       # devfsadm
+       
+    5. Once the disk is detected we need to copy the VTOC table from the c1t0d0 to the newly added disk 
+       using the fmthard command :
+       # prtvtoc /dev/rdsk/c1t0d0s2 | fmthard -s - /dev/rdsk/c1t1d0s2
+       
+    6. Install the bootblk on slice 0 of the new disk.
+       # installboot /usr/platform/sun4u/lib/fs/ufs/bootblk /dev/rdsk/c1t1d0s0
+       
+    7. Add the metadbs we deleted.
+       # metadb -afc 3 c1t0d0s7
+    8. Update the device ID in the SVM database.
+       # metadevadm -u c1t0d0
+  
 	> Boot from mirror
 	  ok devalias
 	  sds-mirror               /pci@1f,4000/scsi@3/disk@1,0
@@ -22,6 +55,147 @@ SVM
 	  disk                     /pci@1f,4000/scsi@3/disk@0,0
 	  cdrom                    /pci@1f,4000/scsi@3/disk@6,0:f
 	  
+   9. Attach the detach sub mirrors using the metaattach command.
+      # metattach d10 d11
+      # metattach d0 d1
+      
+   10. In case you did not detach the sub mirrors in step 1, 
+       run the metereplace command to start the sync which will return the sub mirrors to the ‘Okay’ state:
+       
+       # metareplace -e d0  c1t0d0s0
+	   d0: device c1t0d0s0 is enabled
+       # metareplace -e d10  c1t0d0s1
+	   d10: device c1t0d0s1 is enabled
+	  
+**********************************************************
+**********************************************************
+Solaris 10 patching with SVM 
+****************************
+
+1. Check the health of all metadatabase replicas (metadbs) and SVM metadevices	  
+	# metastat
+	# metastat -c
+	# metadb -i
+	
+2. Check the current boot device.
+	# prtconf -vp | grep -i boot
+	bootpath: '/pci@0,0/pci15ad,1976@10/sd@0,0:a' 
+	boot-device: 'pci@0,0/pci15ad,1976@10/sd@0,0:a disk0:a'
+	
+3. Confirm the boot disk and mirror disk from the format output.
+  # echo | format
+	Searching for disks...done
+
+	AVAILABLE DISK SELECTIONS:
+				 0. c1t0d0 
+						/pci@0,0/pci15ad,1976@10/sd@0,0
+				 1. c1t1d0 
+						/pci@0,0/pci15ad,1976@10/sd@1,0
+	Specify disk (enter its number): Specify disk (enter its number):
+	
+	As seen above, here the root disk is c1t0d0 and the mirror rootdisk is c1t1d0.
+	
+4. Install the bootblock in the root mirror disk c1t1d0, to make sure it is bootable.
+	# installboot /usr/platform/`uname -i`/lib/fs/ufs/bootblk /dev/rdsk/c1t1d0
+	
+5. Detach and delete the SVM mirrors
+	# metadetach -f d10 d12       ## detach root mirror
+	# metadetach -f d20 d22       ## detach swap mirror
+	# metaclear d12
+	# metaclear d22
+	
+6. Clear the metadatabase replicas from the root mirror disk.
+	# metadb -d /dev/dsk/c1t1d0sX 
+
+7. Mount the mirror root disk and replace the SVM related entries in the /etc/vfstab and /etc/system to prevent SVM 
+   to start on boot from the root mirror disk.
+	 # mount /dev/dsk/c1t1d0 /mnt
+	 # vi /etc/fstab
+   Remove the entries related to SVM from the /etc/system file.
+	 
+8. Confirm if the server boots from the un-encapsulated SVM root mirror disk.
+	 # init 0
+   ok> boot rootmirror      (root mirror is a devalias at OBP)
+9. Boot the server into single user mode.
+   # init 0
+   ok> boot -s
+	 
+10. Unzip the patchset bundle and look for the passcode.
+   # unzip -q sol10_Recommended.zip
+   # grep PASSCODE sol10_Recommended/sol10_Recommended.README
+	 
+11. Install the patch cluster
+	  # ./installcluster --[passcode]
+		
+	  #init 6
+		
+12. Reattaching the mirror disk
+		# metadb -a -c 3 c1t1d0s7
+	  # metainit d12 1 1 c1t1d0s0
+		# metainit d22 1 1 c1t1d0s1
+		# metattach d10 d12
+		# metattach d20 d22
+		# metastat | grep -i sync   (check sync status)
+		
+		
+Rollback
+**********
+1. Boot from the un-encapsulated SVM root mirror disk
+	# init 0
+	ok> boot rootmirror
+	
+2. Copy the partition table from rootmirror disk to root disk.
+	# prtvtoc /dev/rdsk/c1t1d0s2 | fmthard -s - /dev/rdsk/c1t0d0s2
+
+3. Create the state database replicas(metadbs).
+	# metadb -afc 3 c1t1d0s7 c1t0d0s7
+	
+4. Create the sub-mirror metadevices.
+	# metainit -f d11 1 1 c1t1d0s0
+	# metainit -f d12 1 1 c1t0d0s0
+	
+5. Create the mirror d10 for root.
+	# metainit d10 -m d11
+	# metaroot d10
+	
+6. Add the below entry in the /etc/system file
+	vi /etc/system
+	set md:mirrored_root_flag = 1
+	
+7. Reboot the system
+	# init 6
+	
+8. Attach the sub-mirror d12 to mirror d10 to sync the data.
+
+	# metattach d10 d12
+
+9. Re-create swap under root partition.
+	# swap -l
+	swapfile             dev  swaplo blocks   free
+	/dev/dsk/c1t1d0s1   30,1       8 1548280 1548280
+	# swap -d /dev/dsk/c1t1d0s1
+	# metainit d22 1 1 c1t0d0s1
+	# metainit d21 1 1 c1t1d0s1
+	# metainit d20 -m d21
+	# metattach d20 d22
+
+	Change the /etc/vfstab entry for the new swap.
+	/dev/dsk/c1t1d0s1      -       -       swap    -       no      -
+	to:
+	/dev/md/dsk/d20        -       -       swap    -       no      -
+	
+		Add the swap again and set as dump device.
+		
+		# swap -a /dev/md/dsk/d20
+	# dumpadm -d swap
+	# eeprom "nvramrc=devalias rootmirror /devices/pci@0,0/pci15ad,1976@10/sd@0,0:a rootdisk /devices/pci@0,0/pci15ad,1976@10/sd@1,0:a"
+	
+	11. Install the bootblock on the new mirror disk.
+		# installboot /usr/platform/`uname -i`/lib/fs/ufs/bootblk /dev/rdsk/c1t0d0s0
+		
+		************************************************************************
+		********************************************************************
+	
 	ok boot sds-mirror
 	
 	# metadb -i
