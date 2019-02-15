@@ -847,3 +847,24 @@ VXVM
      Flushing a service group clears any internal wait states and stops VCS from attempting to bring resources online.
      
      # hagrp -flush [SG] -sys node01
+     
+ > Install and configure VCS on the new node
+ 	
+	After you have finished installing the vcs software run installsf from the software media
+	# cd /cdrom/VRTSvcs/
+	# installsf -addnode
+	
+	SET OF QUESTIONS NEED TO ANSWER IT OUT
+	
+	Verify:
+	Confirm the configuration: run these commands on node03
+	# lltstat -nvv
+	# cat /etc/llttab
+	# cat /etc/llthosts
+	# gabconfig -a
+	# cat /etc/gabtab
+	# vxfenadm -d
+	# cat /etc/vxfenmode
+	# cat /etc/VRTSvcs/conf/config/main.cf   (ClusterServices Sg should have node03)
+	
+ 	
