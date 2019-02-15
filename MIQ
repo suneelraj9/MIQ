@@ -1,3 +1,16 @@
+> Remove a failed disk using luxadm and cfgadm
+  1. luxadm ( most SAS and SCSI disks )
+  2. cfgadm ( most fiber channel disk )
+  
+  > Remove the disk using the luxadm command 
+    # /usr/sbin/luxadm remove_device /dev/rdsk/c1t1d0s2
+    
+  > If the disk fails to get removed, physically remove the disk and use below command 
+    # luxadm -e offline /dev/rdsk/c1t1d0s2
+    
+  > Cleanup the device files for the removed device from /dev directory 
+    # devfsadm -Cv
+
 SVM
 ****
 
