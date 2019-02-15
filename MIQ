@@ -454,7 +454,42 @@ VXVM
         
       > To start DMP,
         # vxdmpadm start restore
-        
+
+> Replacing a failed disk under VxVM
+  # vxprint -htg mydg
+   pl myvol-02     myvol        DISABLED NODEVICE 204800   CONCAT    -        WO
+   
+  # vxdisk -eoalldgs list
+  -            -         disk02       mydg         failed was:c1t3d0s2
+  
+  # vxdiskadm
+   5      Replace a failed or removed disk
+   
+ > Enable the VxVM aliases for root disk and root mirror
+   # eeprom use-nvramrc?=true
+   ok> setenv use-nvramrc? true
+   
+ > set the boot device order either from OS or from ok prompt.
+   # eeprom boot-device=rootdisk rootmirror
+   ok> setenv boot-device rootdisk rootmirror
+   
+ > To boot from mirror disk
+   ok> boot rootmirror
+   or
+   # eeprom nvramrc=devalias rootmirror
+   
+ > Test the boot disk failure
+   Disable the plex rootvol-01
+  # vxmend -g rootdg off rootvol-01
+ 
+ > To restore the plex state to original 
+   ￼vxmend -g rootdg on rootvol-01
+   
+ > Unencapsulating the root disk
+   # ￼vxassist -g rootdg remove mirror volume rootvol swapvol
+   # vxunroot
+   # shutdown -i6 -g0 -y
+ 
      
  *************************************************************
                   VCS-Veritas Cluster
