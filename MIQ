@@ -867,4 +867,37 @@ VXVM
 	# cat /etc/vxfenmode
 	# cat /etc/VRTSvcs/conf/config/main.cf   (ClusterServices Sg should have node03)
 	
+ > Remove a node from an active VCS cluster
+    
+     Freeze node and halt VCS
+     ************************
+        # haconf -makerw
+	# hasys -freeze -persistent node03
+	# haconf -dump
+	# hastop -sys node03 -evacuate
+	
+     Stop I/O fencing and stop LLT/GAB modules
+     ******************************************
+        # /sbin/vxfen-shutdown
+	# vxfenadm -d     (check status of fencing from node01 or node02)
+	# gabconfig -U
+	# lltconfig -U
+	
+    > Remove VCS software
+    	Remove VCS software from node03 by running the installer utility and rename the main.cf file.
+	
+    > Modify AutoStartList and SystemList
+    	On node01
+	# hagrp -modify SG01 AutoStartList –delete node03
+	# hagrp -modify SG01 SystemList –delete node03
+	On node02
+	# hagrp -modify SG02 AutoStartList –delete node03
+	# hagrp -modify SG02 SystemList –delete node03
  	
+    > Remove node from ClusterServices SG
+    	# hagrp -modify ClusterService AutoStartList –delete node03
+	
+    > Remove node from cluster
+    	Now remove node03 from cluster and save the configuration(run this on node01 or node02)
+	# hasys -delete train10
+	# haconf -dump -makero
