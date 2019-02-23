@@ -901,3 +901,32 @@ VXVM
     	Now remove node03 from cluster and save the configuration(run this on node01 or node02)
 	# hasys -delete train10
 	# haconf -dump -makero
+	
+> Configure VCS I/O fencing – Command line and installer utility
+
+    Before configuring the disks for fencing you can run a test to confirm whether they are SCSI3-PGR compatible disks. 
+    The vxfentsthdw script guides you through to test all the disks to be configured in the fencing DG. 
+    
+    # vxfentsthdw
+    # vxfentsthdw -c vxfencoorddg
+    
+    > Steps to configure I/O fencing  
+      1. Initialize disks for I/O fencing
+        # vxdisk -eo alldgs list
+	# vxdisksetup -i disk01
+	# vxdisksetup -i disk02
+	# vxdisksetup -i disk03
+	
+    > Run the installvcs script from the install media with fencing option
+        # cd /cdrom/VRTS/install
+	# ./installvcs -fencing
+	Cluster information verification: Cluster Name: geekdiary
+	Cluster ID Number: 3
+	Systems: node01 node02
+	Would you like to configure I/O fencing on the cluster? [y,n,q] y
+	
+    >  Select disk based fencing
+       We will be doing a disk based fencing rather than a server based fencing also called as CP (coordinator point) client based fencing.
+    You can also directly give the fencing DG name to test an entire DG.
+    
+    OR usiN COMMAND LINE USE BELOW COMMANDS
