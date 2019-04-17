@@ -930,3 +930,17 @@ VXVM
     You can also directly give the fencing DG name to test an entire DG.
     
     OR usiN COMMAND LINE USE BELOW COMMANDS
+    
+ >  Create a service group, resources -disk group, volume, filesystem, application, single virtual IP, multi virtual IP, Clear resource fault
+   
+    > Create a Service Group
+        hagrp -add groupw
+	hagrp -modify groupw SystemList sun1 1 sun2 2
+	hagrp -autoenable groupw -sys sun1
+
+    > We have to create a disk group resource, this will ensure that the disk group has been imported before we start any volumes 
+        hares -add appDG DiskGroup groupw
+	hares -modify appDG Enabled 1
+	hares -modify appDG DiskGroup appdg
+	hares -modify appDG StartVolumes 0
+	hagrp -autoenable groupw -sys sun1
