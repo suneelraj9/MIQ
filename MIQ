@@ -1,3 +1,11 @@
+> SUNWexplo, explorer file upload
+  /opt/SUNWexplo/bin/explorer
+  
+  1. Limited options
+     /opt/SUNWexplo/bin/explorer -w default,localzones,smfextended,\!disks 
+     
+     Note: If doesn't want disk information need to keep exclamatory denotion
+
 > Remove a failed disk using luxadm and cfgadm
   1. luxadm ( most SAS and SCSI disks )
   2. cfgadm ( most fiber channel disk )
