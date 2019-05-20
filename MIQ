@@ -995,6 +995,12 @@ Changing User/Group of a Raw Volume: (ex:)
    > Parallel – Service group runs on multiple systems simultaneously
    > Hybrid – SG behaves as Failover within the local cluster and Parallel for the remote cluster.
    
+   What is Jeopardy?
+   Ans: When a node in the cluster is having only one interconnected link remaining, then it’s very difficult for GAB to discriminate 
+   between system or network failure. A special membership category takes effect in this situation, called jeopardy membership. 
+   This memebship prevent cluster from split brain condition. When a system is placed in jeopardy membership, two actions
+
+   
    > VCS main configuration file located -> /etc/VRTSvcs/conf/config/main.cf
    
    > set VCS configuration file (main.cf) ro/rw
