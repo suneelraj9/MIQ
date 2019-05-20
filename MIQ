@@ -1081,28 +1081,42 @@ Changing User/Group of a Raw Volume: (ex:)
     # hastop -all -force
     # hastop -all
     
+  > Display cluster information
+    # haclus -display
+    
+  > List resource types
+    # hatype -list
+    
+  > ***Check specific resource causing the SG falls on PARTIAL state***
+    # hares -display attribute State -group <servicegroup> -sys <nodename>
+    
   > list the resource dependencies 
-    # hares -dep
+    # hares -dep [resourcename]
+    
+  > List all the information of a resource 
+    # hares -display [resource]
+    
+  > Detailed information about resources in a specific service group
+    # hares -display -group <servicegroup>
+    
+  > List resource attirbutes from a specific resource type
+    # hares -display -type <resource type>
     
   > Enable/disable a resource 
     # hares -modify [resource_name] Enabled 1      (To enable a resource)
     # hares -modify [resource_name] Enabled 0        (To disable a resource)
-    
-  > List all the parameters of a resource 
-    # hares -display [resource]
- 
-  > add a service group(a general method)
-    To add a service group named SG with 2 nodes (node01 and node02)
-    
-    haconf –makerw
-    haconf –makerw
-    hagrp –add SG
-    hagrp –modify SG SystemList node01 0 node02 1
-    hagrp –modify SG AutoStartList node02
-    haconf –dump -makero
-    
+   
   > check the configuration of a service group 
     # hagrp -display SG
+    
+  > Display service group information on specific node
+    # hagrp -display <servicegroup> -sys <node>
+    
+  > Display the resources in a service group
+    # hagrp -resources <servicegroup>
+    
+  > Display the status of a service group on a node
+    # hagrp -state <servicegroup> -sys <node>
     
   > bring service group online/offline
     # hagrp -online [service-group] -sys [node]      (Online the SG on a particular node)
@@ -1121,13 +1135,27 @@ Changing User/Group of a Raw Volume: (ex:)
     be taken offline or brought online. 
     Failover is also disable even when a resource faults. When you unfreeze the SG, it start behaving in the normal way
     
-   > To freeze/unfreeze a Service Group temporarily
-      # hagrp -freeze [service-group]
-      # hagrp -unfreeze [service-group]
+  > To freeze/unfreeze a Service Group temporarily
+    # hagrp -freeze [service-group]
+    # hagrp -unfreeze [service-group]
       
-   > To freeze/unfreeze a Service Group persistently (across reboots) :
-      # hagrp -freeze -persistent[service-group]
-      # hagrp -unfreeze [service-group] -persistent
+  > To freeze/unfreeze a Service Group persistently (across reboots) :
+    # hagrp -freeze -persistent[service-group]
+    # hagrp -unfreeze [service-group] -persistent
+    
+  > After issuing an online command, if you think that a mistake in configuration was made, 
+    this command can be used stop before a fault occurs
+    # hagrp -flush servicegroupname -sys systemname
+ 
+  > add a service group(a general method)
+    To add a service group named SG with 2 nodes (node01 and node02)
+    
+    haconf –makerw
+    haconf –makerw
+    hagrp –add SG
+    hagrp –modify SG SystemList node01 0 node02 1
+    hagrp –modify SG AutoStartList node02
+    haconf –dump -makero
     
    > How to clear resource faults ?
      For persistent resources :
@@ -1136,7 +1164,7 @@ Changing User/Group of a Raw Volume: (ex:)
      For non-persistent resources 
      Clear the fault and probe the resource on node01
      # hares -clear [resource_name] -sys node01
-      # hares -probe [resource_name] -sys node01
+     # hares -probe [resource_name] -sys node01
       
    > clear resources with ADMIN_WAIT state
      If the ManageFaults attribute of a service group is set to NONE, VCS does not take any automatic action when it detects 
