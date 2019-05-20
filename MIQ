@@ -1194,6 +1194,16 @@ Changing User/Group of a Raw Volume: (ex:)
      # hagrp -flush [SG] -sys node01
      
  > Install and configure VCS on the new node
+ 
+    1: Set up the hardware
+        Before adding a node to an existing cluster, node must be physically connected with the cluster.
+        1: Connect the VCS private Ethernet controllers
+        2: Connect the node to the shared storage
+
+    2: Install the VCS software in the node
+       
+       Install the VCS software and install the license.
+
  	
 	After you have finished installing the vcs software run installsf from the software media
 	# cd /cdrom/VRTSvcs/
@@ -1212,8 +1222,33 @@ Changing User/Group of a Raw Volume: (ex:)
 	# cat /etc/vxfenmode
 	# cat /etc/VRTSvcs/conf/config/main.cf   (ClusterServices Sg should have node03)
 	
+	***************
+	   OR
+	**************** 
+  Add the node to an existing cluster
+
+      We have to perform below given tasks in any of the existing node of a cluster
+
+        1: Make to cluster configuration R/W
+           # haconf –makerw
+
+        2: Add the new node to the cluster
+           # hasys –add <new node name>
+
+        3: Copy main.cf file from an existing node to new node
+           # scp /etc/VRTSvcs/conf/config/main.cf new_node:/etc/VRTSvcs/conf/config/main.cf
+
+        4: Start vcs on the new node
+           # hastart
+
+        5: Now make the configuration again read only.
+           # haconf –dump –makero
+	
  > Remove a node from an active VCS cluster
     
+    # cp /etc/VRTSvcs/conf/config/main.cf /etc/VRTSvcs/conf/config/main.cf.orig
+    # hagrp –switch <service group> to <node name>
+
      Freeze node and halt VCS
      ************************
         # haconf -makerw
