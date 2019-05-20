@@ -1146,16 +1146,26 @@ Changing User/Group of a Raw Volume: (ex:)
   > After issuing an online command, if you think that a mistake in configuration was made, 
     this command can be used stop before a fault occurs
     # hagrp -flush servicegroupname -sys systemname
+    
+  > Enable, Disable, Enable all resources, Disable all resources service group
+    # hagrp -enable <servicegroup> -sys <systemname>
+    # hagrp -disable <servicegroup> -sys <systemname>
+    # hagrp -enableeresources <servicegroup>
+    # hagrp -disableresources <servicegroup>
+    
+  > clear faulted non-persitent resources in Servicegroup
+    # hagrp -clear <servicegroup> -sys <nodename>
+    
  
   > add a service group(a general method)
     To add a service group named SG with 2 nodes (node01 and node02)
     
-    haconf –makerw
-    haconf –makerw
-    hagrp –add SG
-    hagrp –modify SG SystemList node01 0 node02 1
-    hagrp –modify SG AutoStartList node02
-    haconf –dump -makero
+     # haconf –makerw
+     # hagrp –add <ServiceGroup>
+     # hagrp –modify <ServiceGroup> SystemList node01 0 node02 1
+     # hagrp –modify <ServiceGroup> AutoStartList node02
+     # haconf –dump -makero
+     
     
    > How to clear resource faults ?
      For persistent resources :
