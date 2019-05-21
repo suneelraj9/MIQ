@@ -1038,6 +1038,17 @@ Changing User/Group of a Raw Volume: (ex:)
    GAB (Group membership services and atomic broadcast) - overall cluster membership information by tracking the heartbeats sent over LLT interconnects
    HAD (High Availability daemon) – the main VCS engine which manages the agents and service group. It is in turn monitored by a daemon named hashadow
    
+   LLT - LLT (Low Latency Transport) provides fast, kernel-to-kernel comms and monitors network connections. 
+         The system admin configures the LLT by creating a configuration file (llttab) that describes the systems in the cluster and private network links among them. 
+         The LLT runs in layer 2 of the network stack
+	 
+   GAB - GAB (Group membership and Atomic Broadcast) provides the global message order required to maintain a synchronised state among the systems, and monitors disk comms such as that required by the VCS heartbeat utility. 
+         The system admin configures GAB driver by creating a configuration file ( gabtab).
+	
+   LLT and GAB files
+    > /etc/llthosts - 	The file is a database, containing one entry per system, that links the LLT system ID with the hosts name. 
+                        The file is identical on each server in the cluster.
+    
  > Check the status of various GAB ports on the cluster nodes
    # gabconfig -a
    
