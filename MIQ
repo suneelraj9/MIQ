@@ -1053,6 +1053,10 @@ Changing User/Group of a Raw Volume: (ex:)
    LLT and GAB files
     > /etc/llthosts - 	The file is a database, containing one entry per system, that links the LLT system ID with the hosts name. 
                         The file is identical on each server in the cluster.
+    > /etc/llttab -     The file contains information that is derived during installation and is used by the utility lltconfig.
+    > /etc/gabtab -     The file contains the information needed to configure the GAB driver. This file is used by the gabconfig utility.
+    > /etc/VRTSvcs/conf/config/main.cf - The VCS configuration file. The file contains the information that defines the cluster and its systems.
+    
     
  > Check the status of various GAB ports on the cluster nodes
    # gabconfig -a
