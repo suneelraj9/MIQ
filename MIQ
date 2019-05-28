@@ -1008,6 +1008,12 @@ Changing User/Group of a Raw Volume: (ex:)
    
    > VCS main configuration file located -> /etc/VRTSvcs/conf/config/main.cf
    
+   > Cluster daemons
+     High Availability Daemon -> had
+     Companion Daemon -> hashadow
+     Resource Agent daemon -> <resource>Agent
+     Web Console cluster managerment daemon -> CmdServer
+   
    > set VCS configuration file (main.cf) ro/rw
      # haconf -dump -makero 
      # haconf -makerw   
@@ -1016,7 +1022,19 @@ Changing User/Group of a Raw Volume: (ex:)
      #hamsg engine_A
      
    > check the status of the entire cluster
-    #hastatus -sum
+     #hastatus -sum
+   > continually monitor cluster
+     # hastatus
+   > verify the cluster is operating
+     # hasys -display
+   > value for a specific cluster attribute
+     # haclus -value <attribute>
+   > modify a cluster attribute
+     # haclus -modify <attribute name> <new>
+   > Enable LinkMonitoring
+     # haclus -enable LinkMonitoring
+   > Disable LinkMonitoring
+     # haclus -disable LinkMonitoring
     
    > verify the syntax of the main.cf 
      # hacf -verify /etc/VRTSvcs/conf/config
@@ -1051,12 +1069,35 @@ Changing User/Group of a Raw Volume: (ex:)
          The system admin configures GAB driver by creating a configuration file ( gabtab).
 	
    LLT and GAB files
+   ******************
     > /etc/llthosts - 	The file is a database, containing one entry per system, that links the LLT system ID with the hosts name. 
                         The file is identical on each server in the cluster.
     > /etc/llttab -     The file contains information that is derived during installation and is used by the utility lltconfig.
     > /etc/gabtab -     The file contains the information needed to configure the GAB driver. This file is used by the gabconfig utility.
     > /etc/VRTSvcs/conf/config/main.cf - The VCS configuration file. The file contains the information that defines the cluster and its systems.
     
+    Gabtab Entries:
+    ****************
+	/sbin/gabdiskconf - i /dev/dsk/c1t2d0s2 -s 16 -S 1123
+	/sbin/gabdiskconf - i /dev/dsk/c1t2d0s2 -s 144 -S 1124
+	/sbin/gabdiskhb -a /dev/dsk/c1t2d0s2 -s 16 -p a -s 1123
+	/sbin/gabdiskhb -a /dev/dsk/c1t2d0s2 -s 144 -p h -s 1124
+	/sbin/gabconfig -c -n2
+        
+	    gabdiskconf 
+	      -i   Initialises the disk region
+	      -s   Start Block
+              -S   Signature
+	      
+	    gabdiskhb (heartbeat disks)
+	      -a   Add a gab disk heartbeat resource
+              -s   Start Block
+              -p   Port
+              -S   Signature
+	      
+	    gabconfig
+	      -c   Configure the driver for use
+              -n   Number of systems in the cluster.
     
  > Check the status of various GAB ports on the cluster nodes
    # gabconfig -a
@@ -1066,6 +1107,28 @@ Changing User/Group of a Raw Volume: (ex:)
    
  > Check the detailed status of LLT links ?
    # lltstat -nvv
+   
+ > Verifying that links are active for LLT
+   # lltstat -n
+   
+ > open ports for LLT
+   # lltstat -p
+   
+ > display the values of LLT configuration directives
+   # lltstat -c
+   
+ > lists information about each configured LLT link
+   # lltstat -l
+   
+ > List all MAC addresses in the cluster
+   # lltconfig -a list
+   
+ > verify that GAB is operating
+   # gabconfig -a
+   Note: port a indicates that GAB is communicating, port h indicates that VCS is started
+   
+ > override the seed values in the gabtab file
+   # gabconfig -c -x
    
  > various LLT configuration files and their function
    LLT uses /etc/llttab to set the configuration of the LLT interconnects.
@@ -1102,10 +1165,13 @@ Changing User/Group of a Raw Volume: (ex:)
     
   > various ways to stop HAD or VCS cluster
     # hastop -local
+      Note: stop the cluster on the local server but leave the application/s running, do not failover the application/s
     # hastop -local -evacuate
+      Note: stop cluster on local server but evacuate (failover) the application/s to another node within the cluster
     # hastop -local -force
     # hastop -all -force
     # hastop -all
+      Note: stop the cluster on all nodes but leave the application/s running
     
   > Display cluster information
     # haclus -display
